@@ -29,6 +29,7 @@ const (
 const (
 	DescriptorTagAC3                        = 0x6a
 	DescriptorTagAVCVideo                   = 0x28
+	DescriptorTagCA                         = 0x9
 	DescriptorTagComponent                  = 0x50
 	DescriptorTagContent                    = 0x54
 	DescriptorTagDataStreamAlignment        = 0x6
@@ -91,6 +92,7 @@ const (
 type Descriptor struct {
 	AC3                        *DescriptorAC3
 	AVCVideo                   *DescriptorAVCVideo
+	CA                         *DescriptorCA
 	Component                  *DescriptorComponent
 	Content                    *DescriptorContent
 	DataStreamAlignment        *DescriptorDataStreamAlignment
@@ -200,6 +202,27 @@ func newDescriptorAVCVideo(i []byte) (d *DescriptorAVCVideo) {
 
 	// AVC 24 hour picture flag
 	d.AVC24HourPictureFlag = i[offset]&0x40 > 0
+	return
+}
+
+// DescriptorCA represents an CA descriptor
+// No doc found unfortunately
+type DescriptorCA struct {
+	SystemID uint16
+	Pid      uint16
+}
+
+func newDescriptorCA(i []byte) (d *DescriptorCA) {
+	// Init
+	d = &DescriptorCA{}
+	var offset int
+
+	// System ID
+	d.SystemID = uint16(i[offset]&0x1f)<<8 | uint16(i[offset+1])
+	offset += 2
+
+	// CA Pid
+	d.Pid = uint16(i[offset]&0x1f)<<8 | uint16(i[offset+1])
 	return
 }
 
@@ -862,6 +885,8 @@ func parseDescriptors(i []byte, offset *int) (o []*Descriptor) {
 						d.AC3 = newDescriptorAC3(b)
 					case DescriptorTagAVCVideo:
 						d.AVCVideo = newDescriptorAVCVideo(b)
+					case DescriptorTagCA:
+						d.CA = newDescriptorCA(b)
 					case DescriptorTagComponent:
 						d.Component = newDescriptorComponent(b)
 					case DescriptorTagContent:
